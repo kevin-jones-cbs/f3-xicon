@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { LexiconDataTable } from '@/components/lexicon/data-table';
 
 interface LexiconEntry {
   name: string;
@@ -51,14 +52,7 @@ export default function LexiconPage() {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">Lexicon</h1>
-      <div className="space-y-4">
-        {data.map((entry) => (
-          <div key={entry.slug} className="bg-white p-4 rounded-lg shadow">
-            <h2 className="text-xl font-semibold">{entry.name}</h2>
-            <p className="text-gray-600 mt-2">{entry.definition}</p>
-          </div>
-        ))}
-      </div>
+      <LexiconDataTable data={data} />
     </div>
   );
 } 
