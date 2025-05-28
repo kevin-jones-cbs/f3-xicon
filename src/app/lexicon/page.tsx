@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { LexiconDataTable } from '@/components/lexicon/data-table';
+import { useSearchParams } from 'next/navigation';
 
 interface LexiconEntry {
   name: string;
@@ -13,6 +14,8 @@ export default function LexiconPage() {
   const [data, setData] = useState<LexiconEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const slug = searchParams.get('term');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,7 +55,7 @@ export default function LexiconPage() {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">Lexicon</h1>
-      <LexiconDataTable data={data} />
+      <LexiconDataTable data={data} initialSlug={slug} />
     </div>
   );
 } 

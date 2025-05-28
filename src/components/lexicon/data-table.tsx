@@ -18,7 +18,15 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Copy } from "lucide-react"
 
 interface LexiconEntry {
   name: string
@@ -31,12 +39,48 @@ const columns: ColumnDef<LexiconEntry>[] = [
     accessorKey: "name",
     cell: ({ row }) => {
       const entry = row.original
+      const handleCopyLink = () => {
+        const url = `${window.location.origin}/lexicon?term=${entry.slug}`
+        navigator.clipboard.writeText(url)
+      }
+
       return (
-        <div className="space-y-2">
-          <div className="font-semibold text-lg">{entry.name}</div>
-          <div className="text-sm text-muted-foreground whitespace-normal break-words">
-            {entry.definition}
+        <div className="flex items-start justify-between space-x-4">
+          <div className="space-y-2">
+            <div className="font-semibold text-lg">{entry.name}</div>
+            <div className="text-sm text-muted-foreground whitespace-normal break-words">
+              {entry.definition}
+            </div>
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4"
+                >
+                  <circle cx="12" cy="12" r="1" />
+                  <circle cx="19" cy="12" r="1" />
+                  <circle cx="5" cy="12" r="1" />
+                </svg>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleCopyLink}>
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Link
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )
     },
@@ -45,13 +89,28 @@ const columns: ColumnDef<LexiconEntry>[] = [
 
 interface DataTableProps {
   data: LexiconEntry[]
+  initialSlug?: string | null
 }
 
-export function LexiconDataTable({ data }: DataTableProps) {
+export function LexiconDataTable({ data, initialSlug }: DataTableProps) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const router = useRouter()
+  const [filteredData, setFilteredData] = useState<LexiconEntry[]>(data)
+  const [isViewingSingleTerm, setIsViewingSingleTerm] = useState(false)
+
+  useEffect(() => {
+    if (initialSlug) {
+      const filtered = data.filter(entry => entry.slug === initialSlug)
+      setFilteredData(filtered)
+      setIsViewingSingleTerm(true)
+    } else {
+      setFilteredData(data)
+      setIsViewingSingleTerm(false)
+    }
+  }, [initialSlug, data])
 
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -67,12 +126,16 @@ export function LexiconDataTable({ data }: DataTableProps) {
     },
   })
 
+  const handleClearSlugFilter = () => {
+    router.push('/lexicon')
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between py-4">
         <div className="relative max-w-sm">
           <Input
-            placeholder="Filter by name..."
+            placeholder="Search Lexicon..."
             value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
               table.getColumn("name")?.setFilterValue(event.target.value)
@@ -141,8 +204,19 @@ export function LexiconDataTable({ data }: DataTableProps) {
           </TableBody>
         </Table>
       </div>
-      <div className="text-sm text-muted-foreground mt-4 text-center">
-        Showing {table.getFilteredRowModel().rows.length} of {data.length} entries
+      <div className="flex flex-col items-center gap-2 mt-4">
+        <div className="text-sm text-muted-foreground">
+          Showing {table.getFilteredRowModel().rows.length} of {data.length} entries
+        </div>
+        {isViewingSingleTerm && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClearSlugFilter}
+          >
+            View Full Lexicon
+          </Button>
+        )}
       </div>
     </div>
   )
