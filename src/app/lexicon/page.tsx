@@ -54,16 +54,18 @@ export default function LexiconPage() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Lexicon</h1>
+      <h1 className="text-3xl font-bold mb-6">F3 Lexicon</h1>
       <LexiconDataTable data={data} initialSlug={slug} />
-      <div className="mt-8 flex justify-center">
-        <a
-          href="/lexicon/submit"
-          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-        >
-          Submit a New Lexicon Entry
-        </a>
-      </div>
+      {!slug && (
+        <div className="mt-8 flex justify-center">
+          <a
+            href="/lexicon/submit"
+            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+          >
+            Submit a New Lexicon Entry
+          </a>
+        </div>
+      )}
     </div>
   );
 } 
