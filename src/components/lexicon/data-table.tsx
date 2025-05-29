@@ -8,6 +8,7 @@ import {
   getPaginationRowModel,
   getFilteredRowModel,
   ColumnFiltersState,
+  FilterFn,
 } from "@tanstack/react-table"
 
 import {
@@ -34,9 +35,50 @@ interface LexiconEntry {
   slug: string
 }
 
+const customFilter: FilterFn<LexiconEntry> = (row, columnId, filterValue) => {
+  const entry = row.original;
+  const searchTerm = filterValue.toLowerCase();
+  return entry.name.toLowerCase().includes(searchTerm) || 
+         entry.definition.toLowerCase().includes(searchTerm);
+};
+
 const columns: ColumnDef<LexiconEntry>[] = [
   {
     accessorKey: "name",
+    filterFn: customFilter,
+    sortingFn: (rowA, rowB) => {
+      const searchTerm = (rowA.getValue("name") as string)?.toLowerCase() || "";
+      const nameA = rowA.original.name.toLowerCase();
+      const nameB = rowB.original.name.toLowerCase();
+      const defA = rowA.original.definition.toLowerCase();
+      const defB = rowB.original.definition.toLowerCase();
+      
+      const nameMatchA = nameA.includes(searchTerm);
+      const nameMatchB = nameB.includes(searchTerm);
+      const defMatchA = defA.includes(searchTerm);
+      const defMatchB = defB.includes(searchTerm);
+
+      // If both match in name, sort alphabetically
+      if (nameMatchA && nameMatchB) {
+        return nameA.localeCompare(nameB);
+      }
+      // If only A matches in name, A comes first
+      if (nameMatchA) return -1;
+      // If only B matches in name, B comes first
+      if (nameMatchB) return 1;
+      
+      // If both match in definition, sort alphabetically by name
+      if (defMatchA && defMatchB) {
+        return nameA.localeCompare(nameB);
+      }
+      // If only A matches in definition, A comes first
+      if (defMatchA) return -1;
+      // If only B matches in definition, B comes first
+      if (defMatchB) return 1;
+      
+      // If neither matches, sort alphabetically by name
+      return nameA.localeCompare(nameB);
+    },
     cell: ({ row }) => {
       const entry = row.original
       const handleCopyLink = () => {
@@ -123,6 +165,12 @@ export function LexiconDataTable({ data, initialSlug }: DataTableProps) {
       pagination: {
         pageSize: 5,
       },
+      sorting: [
+        {
+          id: "name",
+          desc: false,
+        },
+      ],
     },
   })
 
@@ -137,9 +185,10 @@ export function LexiconDataTable({ data, initialSlug }: DataTableProps) {
           <Input
             placeholder="Search Lexicon..."
             value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              table.getColumn("name")?.setFilterValue(event.target.value)
-            }
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              const value = event.target.value;
+              table.getColumn("name")?.setFilterValue(value);
+            }}
             className="pr-8"
           />
           {(table.getColumn("name")?.getFilterValue() as string) && (
@@ -147,7 +196,9 @@ export function LexiconDataTable({ data, initialSlug }: DataTableProps) {
               variant="ghost"
               size="sm"
               className="absolute right-0 top-0 h-full px-2 hover:bg-transparent"
-              onClick={() => table.getColumn("name")?.setFilterValue("")}
+              onClick={() => {
+                table.getColumn("name")?.setFilterValue("");
+              }}
             >
               ✕
             </Button>
