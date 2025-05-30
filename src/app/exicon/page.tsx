@@ -10,6 +10,7 @@ interface ExiconEntry {
   slug: string;
   tags: string;
   video_url?: string;
+  aliases?: string;
 }
 
 export default function ExiconPage() {
@@ -85,7 +86,8 @@ export default function ExiconPage() {
       filtered = data.filter(exercise =>
         exercise.name.toLowerCase().includes(searchLower) ||
         exercise.definition.toLowerCase().includes(searchLower) ||
-        exercise.tags.toLowerCase().includes(searchLower)
+        exercise.tags.toLowerCase().includes(searchLower) ||
+        (exercise.aliases && exercise.aliases.toLowerCase().includes(searchLower))
       );
     }
     return filtered;
@@ -214,13 +216,26 @@ export default function ExiconPage() {
                 <div className="border-t border-slate-100 bg-slate-50">
                   <div className="p-6">
                     {exercise.video_url && (
-                      <div className="aspect-video w-full max-w-2xl mx-auto">
+                      <div className="aspect-video w-full max-w-2xl mx-auto mb-6">
                         <iframe
                           src={getEmbedUrl(exercise.video_url)}
                           className="w-full h-full rounded-lg shadow-md"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
                         />
+                      </div>
+                    )}
+                    {exercise.aliases && (
+                      <div className="bg-slate-100 rounded-lg p-4 max-w-2xl mx-auto">
+                        <span className="text-sm font-medium text-slate-600">AKA: </span>
+                        <span className="text-sm text-slate-700">
+                          {exercise.aliases.split('|').map((alias, index, array) => (
+                            <span key={index}>
+                              {alias.trim()}
+                              {index < array.length - 1 ? ', ' : ''}
+                            </span>
+                          ))}
+                        </span>
                       </div>
                     )}
                   </div>
