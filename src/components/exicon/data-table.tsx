@@ -7,12 +7,7 @@ import {
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { GenericDataTable } from "@/components/ui/generic-data-table"
-
-interface ExiconEntry {
-  name: string
-  definition: string
-  slug: string
-}
+import { ExiconEntry } from "@/types/exicon"
 
 const customFilter: FilterFn<ExiconEntry> = (row, columnId, filterValue) => {
   const entry = row.original;
