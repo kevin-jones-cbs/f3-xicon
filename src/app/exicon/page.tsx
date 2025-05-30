@@ -13,11 +13,28 @@ interface ExiconEntry {
   aliases?: string;
 }
 
+const ALL_TAGS = [
+  'Arms',
+  'Cardio',
+  'Core',
+  'Coupon',
+  'Full Body',
+  'Legs',
+  'Mary',
+  'Music',
+  'Run',
+  'Routine',
+  'Warmup',
+  'Video'
+] as const;
+
 export default function ExiconPage() {
   const [data, setData] = useState<ExiconEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagOperator, setTagOperator] = useState<'AND' | 'OR'>('AND');
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState('');
@@ -83,15 +100,39 @@ export default function ExiconPage() {
     let filtered = data;
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = data.filter(exercise =>
+      filtered = filtered.filter(exercise =>
         exercise.name.toLowerCase().includes(searchLower) ||
         exercise.definition.toLowerCase().includes(searchLower) ||
         exercise.tags.toLowerCase().includes(searchLower) ||
         (exercise.aliases && exercise.aliases.toLowerCase().includes(searchLower))
       );
     }
+
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(exercise => {
+        const exerciseTags = exercise.tags.split('|').map(tag => tag.trim());
+        const hasVideo = Boolean(exercise.video_url);
+        
+        if (tagOperator === 'AND') {
+          return selectedTags.every(tag => {
+            if (tag === 'Video') {
+              return hasVideo;
+            }
+            return exerciseTags.includes(tag);
+          });
+        } else {
+          return selectedTags.some(tag => {
+            if (tag === 'Video') {
+              return hasVideo;
+            }
+            return exerciseTags.includes(tag);
+          });
+        }
+      });
+    }
+
     return filtered;
-  }, [data, searchTerm]);
+  }, [data, searchTerm, selectedTags, tagOperator]);
 
   const paginatedExercises = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -106,6 +147,14 @@ export default function ExiconPage() {
 
   const clearSearch = () => {
     setSearchTerm('');
+  };
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
   };
 
   if (loading) {
@@ -147,14 +196,61 @@ export default function ExiconPage() {
             {searchTerm && (
               <button
                 onClick={clearSearch}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             )}
           </div>
-          <div className="text-sm text-slate-500 mt-2">
-            {filteredExercises.length} exercise{filteredExercises.length !== 1 ? 's' : ''} found
+          <div className="flex flex-wrap gap-2 mt-4">
+            {ALL_TAGS.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => toggleTag(tag)}
+                className={`px-3 py-1 text-sm rounded-full font-medium transition-colors cursor-pointer ${
+                  selectedTags.includes(tag)
+                    ? tag === 'Video'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-blue-100 text-blue-700'
+                    : tag === 'Video'
+                      ? 'border border-red-200 text-red-600 hover:bg-red-50'
+                      : 'border border-blue-200 text-blue-600 hover:bg-blue-50'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+          <div className="text-sm text-slate-500 mt-6 flex items-center gap-2">
+            <span>
+              {filteredExercises.length} exercise{filteredExercises.length !== 1 ? 's' : ''} found
+              {selectedTags.length > 0 && (
+                <>
+                  {' tagged '}
+                  {selectedTags.map((tag, index) => (
+                    <span key={tag}>
+                      {tag}
+                      {index < selectedTags.length - 1 && (
+                        <>
+                          <button
+                            onClick={() => setTagOperator(tagOperator === 'AND' ? 'OR' : 'AND')}
+                            className="mx-1 px-2 py-0.5 text-xs rounded-full font-medium transition-colors bg-yellow-100 hover:bg-yellow-200 text-yellow-700 cursor-pointer"
+                          >
+                            {tagOperator}
+                          </button>
+                        </>
+                      )}
+                    </span>
+                  ))}
+                  <button
+                    onClick={() => setSelectedTags([])}
+                    className="ml-2 px-2 py-0.5 text-xs rounded-full font-medium transition-colors bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
+                  >
+                    Clear tags
+                  </button>
+                </>
+              )}
+            </span>
           </div>
         </div>
 
@@ -256,7 +352,7 @@ export default function ExiconPage() {
                   setPageInput(newPage.toString());
                 }}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 disabled:opacity-50 text-sm"
+                className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 disabled:opacity-50 text-sm cursor-pointer"
               >
                 Previous
               </button>
@@ -302,7 +398,7 @@ export default function ExiconPage() {
                   setPageInput(newPage.toString());
                 }}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 disabled:opacity-50 text-sm"
+                className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 disabled:opacity-50 text-sm cursor-pointer"
               >
                 Next
               </button>
@@ -321,7 +417,7 @@ export default function ExiconPage() {
               Try adjusting your search terms or{' '}
               <button
                 onClick={clearSearch}
-                className="text-blue-600 hover:text-blue-700 underline"
+                className="text-blue-600 hover:text-blue-700 underline cursor-pointer"
               >
                 clear the search
               </button>
