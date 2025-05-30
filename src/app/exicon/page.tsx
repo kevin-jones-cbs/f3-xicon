@@ -155,6 +155,8 @@ export default function ExiconPage() {
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
     );
+    setCurrentPage(1);
+    setPageInput('1');
   };
 
   if (loading) {
