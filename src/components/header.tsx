@@ -28,9 +28,6 @@ export function Header() {
           <div className="flex items-center space-x-4">
             <SubmissionNotification />
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">
-                Signed in as {session.user?.email}
-              </span>
               <button
                 onClick={() => signOut()}
                 className="text-sm text-gray-700 hover:text-gray-900 cursor-pointer"

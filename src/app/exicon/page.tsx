@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { Search, ChevronDown, ChevronUp, X, Play } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { Search, ChevronDown, ChevronUp, X, Play, Pencil } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { exportToCSV } from '@/utils/csvExport';
 import { ExiconEntry } from '@/types/exicon';
 
@@ -22,6 +23,7 @@ const ALL_TAGS = [
 ] as const;
 
 export default function ExiconPage() {
+  const { data: session } = useSession();
   const [data, setData] = useState<ExiconEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +36,7 @@ export default function ExiconPage() {
   const itemsPerPage = 5;
   const searchParams = useSearchParams();
   const slug = searchParams.get('term');
+  const router = useRouter();
 
   const getEmbedUrl = (url: string) => {
     try {
@@ -103,7 +106,7 @@ export default function ExiconPage() {
 
     if (selectedTags.length > 0) {
       filtered = filtered.filter(exercise => {
-        const exerciseTags = exercise.tags.split('|').map(tag => tag.trim());
+        const exerciseTags = exercise.tags && exercise.tags.split('|').map(tag => tag.trim()) || '';
         const hasVideo = Boolean(exercise.video_url);
         
         if (tagOperator === 'AND') {
@@ -268,9 +271,23 @@ export default function ExiconPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2 min-h-[2.5rem]">
-                      <h3 className="text-xl font-semibold text-slate-800">
-                        {exercise.name}
-                      </h3>
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-xl font-semibold text-slate-800">
+                          {exercise.name}
+                        </h3>
+                        {session && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/exicon/submit?edit=${exercise.slug}`);
+                            }}
+                            className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 text-sm bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-md transition-colors"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            <span>Edit</span>
+                          </button>
+                        )}
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         {exercise.tags && exercise.tags.split('|').map((tag, index) => (
                           <span
@@ -288,19 +305,21 @@ export default function ExiconPage() {
                         )}
                       </div>
                     </div>
-                    <p className={`text-slate-600 leading-relaxed ${expandedCard === exercise.slug ? '' : 'line-clamp-2'}`}>
+                    <p className={`text-slate-600 leading-relaxed whitespace-pre-wrap ${expandedCard === exercise.slug ? '' : 'line-clamp-2'}`}>
                       {exercise.definition}
                     </p>
                   </div>
-                  {(exercise.video_url || exercise.aliases || exercise.definition.length > 200) && (
-                    <div className="ml-4 flex-shrink-0">
-                      {expandedCard === exercise.slug ? (
-                        <ChevronUp className="w-6 h-6 text-slate-400" />
-                      ) : (
-                        <ChevronDown className="w-6 h-6 text-slate-400" />
-                      )}
-                    </div>
-                  )}
+                  <div className="ml-4 flex-shrink-0">
+                    {(exercise.video_url || exercise.aliases || exercise.definition.length > 200) && (
+                      <div>
+                        {expandedCard === exercise.slug ? (
+                          <ChevronUp className="w-6 h-6 text-slate-400" />
+                        ) : (
+                          <ChevronDown className="w-6 h-6 text-slate-400" />
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -319,7 +338,7 @@ export default function ExiconPage() {
                       </div>
                     )}
                     {exercise.aliases && (
-                      <div className="bg-slate-100 rounded-lg p-4 max-w-2xl mx-auto">
+                      <div className="bg-slate-100 rounded-lg p-4 max-w-2xl mx-auto mb-6">
                         <span className="text-sm font-medium text-slate-600">AKA: </span>
                         <span className="text-sm text-slate-700">
                           {exercise.aliases.split('|').map((alias, index, array) => (
@@ -444,7 +463,7 @@ export default function ExiconPage() {
                 href="/exicon/submit"
                 className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded inline-block"
               >
-                Submit a New Exicon Entry
+                {session ? 'Create New Entry' : 'Submit a New Exicon Entry'}
               </a>
             </div>
           )}

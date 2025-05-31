@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plus, X } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 const ALL_TAGS = [
   'Arms',
@@ -21,7 +22,11 @@ const ALL_TAGS = [
 ] as const;
 
 export default function SubmitExiconPage() {
+  const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editSlug = searchParams.get('edit');
+  const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
   const [definition, setDefinition] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
@@ -32,6 +37,34 @@ export default function SubmitExiconPage() {
   const [region, setRegion] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const loadExercise = async () => {
+      if (editSlug) {
+        setIsLoading(true);
+        try {
+          const response = await fetch(`/api/exicon/${editSlug}`);
+          if (!response.ok) {
+            throw new Error('Failed to load exercise');
+          }
+          const data = await response.json();
+          setName(data.name);
+          setDefinition(data.definition);
+          setVideoUrl(data.video_url || '');
+          setSelectedTags(data.tags ? data.tags.split('|') : []);
+          setAliases(data.aliases ? data.aliases.split('|') : []);
+          setIsEditing(true);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to load exercise');
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadExercise();
+  }, [editSlug]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev => 
@@ -58,8 +91,24 @@ export default function SubmitExiconPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/exicon/submit', {
-        method: 'POST',
+      let endpoint;
+      let method;
+
+      if (isEditing) {
+        endpoint = `/api/exicon/${editSlug}`;
+        method = 'PUT';
+      } else if (session) {
+        // Admin creating new entry
+        endpoint = '/api/exicon/create';
+        method = 'POST';
+      } else {
+        // Regular user submitting
+        endpoint = '/api/exicon/submit';
+        method = 'POST';
+      }
+
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -69,14 +118,13 @@ export default function SubmitExiconPage() {
           video_url: videoUrl,
           tags: selectedTags.join('|'),
           aliases: aliases.join('|'),
-          f3name,
-          region,
+          ...(isEditing || session ? {} : { f3name, region }),
         }),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to submit entry');
+        throw new Error(data.error || `Failed to ${isEditing ? 'update' : session ? 'create' : 'submit'} entry`);
       }
 
       router.push('/exicon');
@@ -87,9 +135,28 @@ export default function SubmitExiconPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-4 max-w-2xl">
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-4">Loading exercise data...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-4 max-w-2xl">
-      <h1 className="text-3xl font-bold mb-6">Submit a New Exercise</h1>
+      <h1 className="text-3xl font-bold mb-6">
+        {isEditing ? 'Edit Exercise' : session ? 'Create New Exercise' : 'Submit a New Exercise'}
+      </h1>
+      
+      {session && !isEditing && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
+          <p className="font-medium">Admin Mode</p>
+          <p className="text-sm mt-1">You are creating a new exercise entry directly in the exicon. This will be published immediately without going through the submission process.</p>
+        </div>
+      )}
       
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -222,38 +289,50 @@ export default function SubmitExiconPage() {
           />
         </div>
 
-        <div>
-          <label htmlFor="f3name" className="block text-sm font-medium text-gray-700 mb-1">
-            Your F3 Name (optional)
-          </label>
-          <Input
-            type="text"
-            id="f3name"
-            value={f3name}
-            onChange={(e) => setF3name(e.target.value)}
-            placeholder="Enter your F3 name"
-          />
-        </div>
+        {!isEditing && !session && (
+          <>
+            <div>
+              <label htmlFor="f3name" className="block text-sm font-medium text-gray-700 mb-1">
+                Your F3 Name (optional)
+              </label>
+              <Input
+                type="text"
+                id="f3name"
+                value={f3name}
+                onChange={(e) => setF3name(e.target.value)}
+                placeholder="Enter your F3 name"
+              />
+            </div>
 
-        <div>
-          <label htmlFor="region" className="block text-sm font-medium text-gray-700 mb-1">
-            Your F3 Region (optional)
-          </label>
-          <Input
-            type="text"
-            id="region"
-            value={region}
-            onChange={(e) => setRegion(e.target.value)}
-            placeholder="Enter your F3 region"
-          />
-        </div>
+            <div>
+              <label htmlFor="region" className="block text-sm font-medium text-gray-700 mb-1">
+                Your F3 Region (optional)
+              </label>
+              <Input
+                type="text"
+                id="region"
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                placeholder="Enter your F3 region"
+              />
+            </div>
+          </>
+        )}
 
-        <div className="flex justify-end">
+        <div className="flex gap-4">
           <Button
             type="submit"
             disabled={isSubmitting}
+            className="flex-1"
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Exercise'}
+            {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : session ? 'Create Exercise' : 'Submit Exercise'}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push('/exicon')}
+          >
+            Cancel
           </Button>
         </div>
       </form>

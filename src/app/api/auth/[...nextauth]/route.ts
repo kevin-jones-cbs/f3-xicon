@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { Pool } from "pg";
 import { compare } from "bcrypt";
@@ -8,7 +8,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-const handler = NextAuth({
+export const authOptions: AuthOptions = {
   adapter: PostgresAdapter(pool),
   providers: [
     CredentialsProvider({
@@ -48,11 +48,13 @@ const handler = NextAuth({
     }),
   ],
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as const,
   },
   pages: {
     signIn: "/login",
   },
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST }; 
