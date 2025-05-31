@@ -6,7 +6,7 @@ import {
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { GenericDataTable } from "@/components/ui/generic-data-table"
-import { ExiconEntry } from "@/types/exicon"
+import { ExiconEntry } from "@/types/excercise-entry"
 
 const columns: ColumnDef<ExiconEntry>[] = [
   {

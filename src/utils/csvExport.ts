@@ -1,13 +1,13 @@
-import { ExiconEntry } from '../types/exicon';
+import { ExerciseEntry } from '../types/excercise-entry';
 
-export const exportToCSV = (exercises: ExiconEntry[]): void => {
+export const exportToCSV = (exercises: ExerciseEntry[]): void => {
   const headers = ['Name', 'Definition', 'Tags', 'Aliases', 'Video URL'];
   const csvContent = [
     headers.join(','),
     ...exercises.map(exercise => [
       `"${exercise.name.replace(/"/g, '""')}"`,
       `"${exercise.definition.replace(/"/g, '""')}"`,
-      `"${exercise.tags.replace(/"/g, '""')}"`,
+      `"${(exercise.tags || '').replace(/"/g, '""')}"`,
       `"${(exercise.aliases || '').replace(/"/g, '""')}"`,
       `"${(exercise.video_url || '').replace(/"/g, '""')}"`
     ].join(','))

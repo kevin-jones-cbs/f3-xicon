@@ -5,34 +5,19 @@ import { useSearchParams } from 'next/navigation';
 import ExerciseList from '@/components/ExerciseList';
 import { ExerciseEntry } from '@/types/excercise-entry';
 
-const ALL_TAGS = [
-  'Arms',
-  'Cardio',
-  'Core',
-  'Coupon',
-  'Full Body',
-  'Legs',
-  'Mary',
-  'Music',
-  'Run',
-  'Routine',
-  'Warmup',
-  'Video'
-] as const;
-
-export default function ExiconPage() {
+export default function LexiconPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading exicon data...</div>
+        <div className="text-xl">Loading lexicon data...</div>
       </div>
     }>
-      <ExiconContent />
+      <LexiconContent />
     </Suspense>
   );
 }
 
-function ExiconContent() {
+function LexiconContent() {
   const [data, setData] = useState<ExerciseEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +27,7 @@ function ExiconContent() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/exicon');
+        const response = await fetch('/api/lexicon');
         if (!response.ok) {
           throw new Error('Failed to fetch data');
         }
@@ -60,16 +45,16 @@ function ExiconContent() {
 
   const handleDelete = async (slug: string) => {
     try {
-      const response = await fetch(`/api/exicon/${slug}`, {
+      const response = await fetch(`/api/lexicon/${slug}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete exercise');
+        throw new Error('Failed to delete entry');
       }
 
-      // Remove the deleted exercise from the data
-      setData(prevData => prevData.filter(exercise => exercise.slug !== slug));
+      // Remove the deleted entry from the data
+      setData(prevData => prevData.filter(entry => entry.slug !== slug));
     } catch (err) {
       throw err;
     }
@@ -78,7 +63,7 @@ function ExiconContent() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading exicon data...</div>
+        <div className="text-xl">Loading lexicon data...</div>
       </div>
     );
   }
@@ -94,13 +79,12 @@ function ExiconContent() {
   return (
     <ExerciseList
       data={data}
-      title="F3 Exicon"
-      description="Searchable exercise definitions for F3 workouts"
-      showTags={true}
-      showVideos={true}
-      allTags={ALL_TAGS}
+      title="F3 Lexicon"
+      description="Searchable F3 terminology and definitions"
+      showTags={false}
+      showVideos={false}
       onDelete={handleDelete}
-      editPath="/exicon/submit"
+      editPath="/lexicon/submit"
     />
   );
 } 
