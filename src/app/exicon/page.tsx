@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import ExerciseList from '@/components/ExerciseList';
 import { ExerciseEntry } from '@/types/excercise-entry';
 
@@ -36,8 +35,6 @@ function ExiconContent() {
   const [data, setData] = useState<ExerciseEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const searchParams = useSearchParams();
-  const slug = searchParams.get('term');
 
   useEffect(() => {
     const fetchData = async () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { ExerciseEntry } from '@/types/excercise-entry';
@@ -16,6 +16,28 @@ interface ExerciseSubmitProps {
 }
 
 export default function ExerciseSubmit({
+  title,
+  description,
+  showTags = true,
+  showVideos = true,
+  allTags = [],
+  apiPath,
+}: ExerciseSubmitProps) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ExerciseSubmitContent
+        title={title}
+        description={description}
+        showTags={showTags}
+        showVideos={showVideos}
+        allTags={allTags}
+        apiPath={apiPath}
+      />
+    </Suspense>
+  );
+}
+
+function ExerciseSubmitContent({
   title,
   description,
   showTags = true,

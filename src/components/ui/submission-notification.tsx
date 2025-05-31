@@ -46,7 +46,7 @@ export default function SubmissionNotification() {
     };
   }, []);
 
-  if (isLoading || !counts || counts.totalCount === 0) {
+  if (isLoading || !counts) {
     return null;
   }
 
