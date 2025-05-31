@@ -292,18 +292,20 @@ export default function ExiconPage() {
                       {exercise.definition}
                     </p>
                   </div>
-                  <div className="ml-4 flex-shrink-0">
-                    {expandedCard === exercise.slug ? (
-                      <ChevronUp className="w-6 h-6 text-slate-400" />
-                    ) : (
-                      <ChevronDown className="w-6 h-6 text-slate-400" />
-                    )}
-                  </div>
+                  {(exercise.video_url || exercise.aliases || exercise.definition.length > 200) && (
+                    <div className="ml-4 flex-shrink-0">
+                      {expandedCard === exercise.slug ? (
+                        <ChevronUp className="w-6 h-6 text-slate-400" />
+                      ) : (
+                        <ChevronDown className="w-6 h-6 text-slate-400" />
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Expanded Content */}
-              {expandedCard === exercise.slug && (
+              {expandedCard === exercise.slug && (exercise.video_url || exercise.aliases) && (
                 <div className="border-t border-slate-100 bg-slate-50">
                   <div className="p-6">
                     {exercise.video_url && (
