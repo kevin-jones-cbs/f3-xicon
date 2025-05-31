@@ -88,4 +88,42 @@ export async function PUT(
       { status: 500 }
     );
   }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { slug: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Delete the exercise
+    const { rows } = await pool.query(
+      `DELETE FROM xicon.exicon
+       WHERE slug = $1
+       RETURNING *`,
+      [params.slug]
+    );
+
+    if (rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Exercise not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting exercise:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete exercise' },
+      { status: 500 }
+    );
+  }
 } 
