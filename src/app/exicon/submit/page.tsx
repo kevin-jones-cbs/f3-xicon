@@ -148,7 +148,7 @@ export default function SubmitExiconPage() {
   return (
     <div className="container mx-auto p-4 max-w-2xl">
       <h1 className="text-3xl font-bold mb-6">
-        {isEditing ? 'Edit Exercise' : session ? 'Create New Exercise' : 'Submit a New Exercise'}
+        {isEditing ? 'Edit Exercise' : session ? 'Create New Exicon Entry' : 'Submit a New Exercise'}
       </h1>
       
       {session && !isEditing && (
