@@ -12,6 +12,8 @@ import {
   SortingState,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
+import EmptyState from '@/components/ui/empty-state';
+import { ClipboardList } from 'lucide-react';
 
 interface Submission {
   id: number;
@@ -19,6 +21,7 @@ interface Submission {
   submitted_on: string;
   f3name: string | null;
   region: string | null;
+  type?: 'exicon' | 'lexicon';
 }
 
 interface SubmissionsData {
@@ -28,12 +31,12 @@ interface SubmissionsData {
 
 const columnHelper = createColumnHelper<Submission>();
 
-const columns = [
+const createColumns = (type: 'exicon' | 'lexicon') => [
   columnHelper.accessor('name', {
     header: 'Name',
     cell: info => (
       <a 
-        href={`/exicon/submit?submission=${info.row.original.id}`}
+        href={`/${type}/submit?submission=${info.row.original.id}`}
         className="text-blue-600 hover:text-blue-800 hover:underline"
       >
         {info.getValue()}
@@ -76,7 +79,11 @@ export default function SubmissionsPage() {
           throw new Error('Failed to fetch submissions');
         }
         const data = await response.json();
-        setData(data);
+        const typedData = {
+          exiconSubmissions: data.exiconSubmissions.map((s: Submission) => ({ ...s, type: 'exicon' })),
+          lexiconSubmissions: data.lexiconSubmissions.map((s: Submission) => ({ ...s, type: 'lexicon' }))
+        };
+        setData(typedData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -91,7 +98,7 @@ export default function SubmissionsPage() {
 
   const exiconTable = useReactTable({
     data: data?.exiconSubmissions || [],
-    columns,
+    columns: createColumns('exicon'),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     state: {
@@ -102,7 +109,7 @@ export default function SubmissionsPage() {
 
   const lexiconTable = useReactTable({
     data: data?.lexiconSubmissions || [],
-    columns,
+    columns: createColumns('lexicon'),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     state: {
@@ -137,78 +144,94 @@ export default function SubmissionsPage() {
         <h2 className="text-2xl font-semibold mb-4 ml-2">
           <a href="/exicon" className="text-blue-600 hover:text-blue-800 hover:underline">Exicon</a> Submissions
         </h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              {exiconTable.getHeaderGroups().map(headerGroup => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map(header => (
-                    <th
-                      key={header.id}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {exiconTable.getRowModel().rows.map(row => (
-                <tr key={row.id} className="hover:bg-gray-50">
-                  {row.getVisibleCells().map(cell => (
-                    <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {data?.exiconSubmissions.length === 0 ? (
+          <EmptyState
+            title="No Exicon Submissions"
+            description="There are no pending Exicon submissions at this time."
+            icon={<ClipboardList className="h-12 w-12 text-gray-400" />}
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                {exiconTable.getHeaderGroups().map(headerGroup => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map(header => (
+                      <th
+                        key={header.id}
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {exiconTable.getRowModel().rows.map(row => (
+                  <tr key={row.id} className="hover:bg-gray-50">
+                    {row.getVisibleCells().map(cell => (
+                      <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div>
         <h2 className="text-2xl font-semibold mb-4 ml-2">
           <a href="/lexicon" className="text-blue-600 hover:text-blue-800 hover:underline">Lexicon</a> Submissions
         </h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              {lexiconTable.getHeaderGroups().map(headerGroup => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map(header => (
-                    <th
-                      key={header.id}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {lexiconTable.getRowModel().rows.map(row => (
-                <tr key={row.id} className="hover:bg-gray-50">
-                  {row.getVisibleCells().map(cell => (
-                    <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {data?.lexiconSubmissions.length === 0 ? (
+          <EmptyState
+            title="No Lexicon Submissions"
+            description="There are no pending Lexicon submissions at this time."
+            icon={<ClipboardList className="h-12 w-12 text-gray-400" />}
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                {lexiconTable.getHeaderGroups().map(headerGroup => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map(header => (
+                      <th
+                        key={header.id}
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {lexiconTable.getRowModel().rows.map(row => (
+                  <tr key={row.id} className="hover:bg-gray-50">
+                    {row.getVisibleCells().map(cell => (
+                      <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

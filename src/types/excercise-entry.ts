@@ -1,4 +1,4 @@
-export type ExerciseEntry = {
+export interface ExerciseEntry {
   id: number;
   name: string;
   slug: string;
@@ -8,4 +8,6 @@ export type ExerciseEntry = {
   video_url?: string;
   created_at?: string;
   updated_at?: string;
-};
+  f3name?: string;
+  region?: string;
+}

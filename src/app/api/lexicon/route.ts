@@ -1,21 +1,12 @@
 import { NextResponse } from 'next/server';
-import { Pool } from 'pg';
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+import { getDbPool } from '@/lib/db';
 
 export async function GET() {
   try {
-    const result = await pool.query(`
-      SELECT id, name, slug, definition, aliases, created_at, updated_at
-      FROM xicon.lexicon
-      ORDER BY name ASC
-    `);
-
+    const result = await getDbPool().query('SELECT name, definition, slug, aliases FROM xicon.lexicon order by name');
     return NextResponse.json(result.rows);
   } catch (error) {
-    console.error('Error fetching lexicon data:', error);
+    console.error('Database query error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch lexicon data' },
       { status: 500 }
