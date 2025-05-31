@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import pool from '@/lib/db';
+import { getDbPool } from '@/lib/db';
 
 export async function GET() {
   try {
@@ -12,8 +12,8 @@ export async function GET() {
 
     // Get counts from both tables
     const [exiconResult, lexiconResult] = await Promise.all([
-      pool.query('SELECT COUNT(*) FROM xicon.exicon_submissions'),
-      pool.query('SELECT COUNT(*) FROM xicon.lexicon_submissions')
+      getDbPool().query('SELECT COUNT(*) FROM xicon.exicon_submissions'),
+      getDbPool().query('SELECT COUNT(*) FROM xicon.lexicon_submissions')
     ]);
 
     const exiconCount = parseInt(exiconResult.rows[0].count);

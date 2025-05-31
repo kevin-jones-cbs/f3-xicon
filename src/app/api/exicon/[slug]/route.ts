@@ -1,20 +1,14 @@
-import { NextResponse } from 'next/server';
-import { Pool } from 'pg';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
+import { getDbPool } from '@/lib/db';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-export async function GET(
-  request: Request,
-  { params }: { params: { slug: string } }
-) {
+export async function GET(request: NextRequest) {
+  const slug = request.nextUrl.pathname.split('/').pop(); // or use regex if needed
   try {
-    const { rows } = await pool.query(
+    const { rows } = await getDbPool().query(
       'SELECT * FROM xicon.exicon WHERE slug = $1',
-      [params.slug]
+      [slug]
     );
 
     if (rows.length === 0) {
@@ -34,10 +28,8 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { slug: string } }
-) {
+export async function PUT(request: NextRequest) {
+  const slug = request.nextUrl.pathname.split('/').pop(); // or use regex if needed
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
@@ -59,7 +51,7 @@ export async function PUT(
     }
 
     // Update the exercise
-    const { rows } = await pool.query(
+    const { rows } = await getDbPool().query(
       `UPDATE xicon.exicon
        SET 
          name = $1,
@@ -70,7 +62,7 @@ export async function PUT(
          updated_at = NOW()
        WHERE slug = $6
        RETURNING *`,
-      [name, definition, video_url || null, tags || null, aliases || null, params.slug]
+      [name, definition, video_url || null, tags || null, aliases || null, slug]
     );
 
     if (rows.length === 0) {
@@ -90,10 +82,8 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { slug: string } }
-) {
+export async function DELETE(request: NextRequest) {
+  const slug = request.nextUrl.pathname.split('/').pop(); // or use regex if needed
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
@@ -104,11 +94,11 @@ export async function DELETE(
     }
 
     // Delete the exercise
-    const { rows } = await pool.query(
+    const { rows } = await getDbPool().query(
       `DELETE FROM xicon.exicon
        WHERE slug = $1
        RETURNING *`,
-      [params.slug]
+      [slug]
     );
 
     if (rows.length === 0) {

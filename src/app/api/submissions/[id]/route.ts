@@ -1,12 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import pool from '@/lib/db';
+import { authOptions } from '@/lib/auth';
+import { getDbPool } from '@/lib/db';
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+  request: NextRequest) {
+    const id = request.nextUrl.pathname.split('/').pop();
   try {
     const session = await getServerSession(authOptions);
     
@@ -14,7 +13,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const result = await pool.query(
+    const result = await getDbPool().query(
       `SELECT 
         id,
         name,
@@ -26,7 +25,7 @@ export async function GET(
         region
       FROM xicon.exicon_submissions
       WHERE id = $1`,
-      [params.id]
+      [id]
     );
 
     if (result.rows.length === 0) {
@@ -47,9 +46,8 @@ export async function GET(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+  request: NextRequest) {
+    const id = request.nextUrl.pathname.split('/').pop();
   try {
     const session = await getServerSession(authOptions);
     
@@ -57,9 +55,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const result = await pool.query(
+    const result = await getDbPool().query(
       'DELETE FROM xicon.exicon_submissions WHERE id = $1 RETURNING *',
-      [params.id]
+      [id]
     );
 
     if (result.rows.length === 0) {

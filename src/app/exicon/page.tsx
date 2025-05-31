@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
 import { Search, ChevronDown, ChevronUp, X, Play, Pencil, Trash2 } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -23,6 +23,18 @@ const ALL_TAGS = [
 ] as const;
 
 export default function ExiconPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl">Loading exicon data...</div>
+      </div>
+    }>
+      <ExiconContent />
+    </Suspense>
+  );
+}
+
+function ExiconContent() {
   const { data: session } = useSession();
   const [data, setData] = useState<ExiconEntry[]>([]);
   const [loading, setLoading] = useState(true);

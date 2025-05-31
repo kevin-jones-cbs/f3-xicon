@@ -1,7 +1,6 @@
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
-import Link from 'next/link';
 import SubmissionNotification from './ui/submission-notification';
 
 export function Header() {

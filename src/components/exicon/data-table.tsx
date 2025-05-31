@@ -2,24 +2,15 @@
 
 import {
   ColumnDef,
-  FilterFn,
 } from "@tanstack/react-table"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { GenericDataTable } from "@/components/ui/generic-data-table"
 import { ExiconEntry } from "@/types/exicon"
 
-const customFilter: FilterFn<ExiconEntry> = (row, columnId, filterValue) => {
-  const entry = row.original;
-  const searchTerm = filterValue.toLowerCase();
-  return entry.name.toLowerCase().includes(searchTerm) || 
-         entry.definition.toLowerCase().includes(searchTerm);
-};
-
 const columns: ColumnDef<ExiconEntry>[] = [
   {
     accessorKey: "name",
-    filterFn: customFilter,
     sortingFn: (rowA, rowB) => {
       const searchTerm = (rowA.getValue("name") as string)?.toLowerCase() || "";
       const nameA = rowA.original.name.toLowerCase();
@@ -103,7 +94,6 @@ export function ExiconDataTable({ data, initialSlug }: DataTableProps) {
       columns={columns}
       searchPlaceholder="Search Exicon..."
       searchColumnId="name"
-      customFilter={customFilter}
       viewMode={isViewingSingleTerm ? {
         isActive: true,
         onViewAll: handleClearSlugFilter,

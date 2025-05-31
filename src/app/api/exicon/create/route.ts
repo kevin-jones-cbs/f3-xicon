@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import pool from '@/lib/db';
+import { authOptions } from '@/lib/auth';
+import { getDbPool } from '@/lib/db';
 
 export async function POST(request: Request) {
   try {
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     }
 
     // Check if name already exists
-    const existingCheck = await pool.query(
+    const existingCheck = await getDbPool().query(
       'SELECT id FROM xicon.exicon WHERE name = $1',
       [name]
     );
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       .replace(/(^-|-$)/g, '');
 
     // Insert the entry directly into exicon table
-    const result = await pool.query(
+    const result = await getDbPool().query(
       `INSERT INTO xicon.exicon 
        (name, definition, video_url, tags, aliases, slug)
        VALUES ($1, $2, $3, $4, $5, $6)

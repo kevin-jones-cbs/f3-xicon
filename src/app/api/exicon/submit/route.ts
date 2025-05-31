@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { getDbPool } from '@/lib/db';
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     }
 
     // Check if name already exists
-    const existingCheck = await pool.query(
+    const existingCheck = await getDbPool().query(
       'SELECT id FROM xicon.exicon_submissions WHERE name = $1',
       [name]
     );
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     }
 
     // Insert the submission
-    const result = await pool.query(
+    const result = await getDbPool().query(
       `INSERT INTO xicon.exicon_submissions 
        (name, definition, video_url, tags, aliases, f3name, region)
        VALUES ($1, $2, $3, $4, $5, $6, $7)

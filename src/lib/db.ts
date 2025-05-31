@@ -1,29 +1,38 @@
 import { Pool } from 'pg';
 
-// Validate required environment variables
 const requiredEnvVars = ['POSTGRES_HOST', 'POSTGRES_PORT', 'POSTGRES_DB', 'POSTGRES_USER', 'POSTGRES_PASSWORD'] as const;
 
-for (const envVar of requiredEnvVars) {
-  if (!process.env[envVar]) {
-    throw new Error(`Missing required environment variable: ${envVar}`);
+function validateEnv() {
+  for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+      throw new Error(`Missing required environment variable: ${envVar}`);
+    }
   }
 }
 
-// Create a new pool instance
-const pool = new Pool({
-  host: process.env.POSTGRES_HOST,
-  port: parseInt(process.env.POSTGRES_PORT || '5432'),
-  database: process.env.POSTGRES_DB,
-  user: process.env.POSTGRES_USER,
-  password: process.env.POSTGRES_PASSWORD,
-  // Add SSL configuration if needed
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
+let pool: Pool | null = null;
 
-// Test the connection
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
-  process.exit(-1);
-});
+export function getDbPool(): Pool {
+  if (pool) return pool;
 
-export default pool; 
+  validateEnv();
+
+  const isGcp = process.env.INSTANCE_CONNECTION_NAME !== undefined;
+
+  pool = new Pool({
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DB,
+    host: isGcp
+      ? `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`
+      : process.env.POSTGRES_HOST,
+    port: isGcp ? undefined : parseInt(process.env.POSTGRES_PORT || '5432'),
+  });
+
+  pool.on('error', (err) => {
+    console.error('Unexpected error on idle client', err);
+    process.exit(-1);
+  });
+
+  return pool;
+}

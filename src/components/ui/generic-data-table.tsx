@@ -8,7 +8,6 @@ import {
   getPaginationRowModel,
   getFilteredRowModel,
   ColumnFiltersState,
-  FilterFn,
 } from "@tanstack/react-table"
 
 import {
@@ -33,7 +32,6 @@ interface GenericDataTableProps<TData> {
   columns: ColumnDef<TData>[]
   searchPlaceholder?: string
   searchColumnId: string
-  customFilter?: FilterFn<TData>
   pageSize?: number
   showEntryCount?: boolean
   totalEntries?: number
@@ -51,7 +49,6 @@ export function GenericDataTable<TData>({
   columns,
   searchPlaceholder = "Search...",
   searchColumnId,
-  customFilter,
   pageSize = 5,
   showEntryCount = true,
   totalEntries,

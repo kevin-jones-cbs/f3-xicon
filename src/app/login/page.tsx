@@ -32,7 +32,7 @@ export default function LoginPage() {
 
       router.push('/admin/submissions'); // Redirect submissions on login
       router.refresh();
-    } catch (error) {
+    } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);

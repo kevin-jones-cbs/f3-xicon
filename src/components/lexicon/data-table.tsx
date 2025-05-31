@@ -2,7 +2,6 @@
 
 import {
   ColumnDef,
-  FilterFn,
 } from "@tanstack/react-table"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -13,18 +12,9 @@ interface LexiconEntry {
   definition: string
   slug: string
 }
-
-const customFilter: FilterFn<LexiconEntry> = (row, columnId, filterValue) => {
-  const entry = row.original;
-  const searchTerm = filterValue.toLowerCase();
-  return entry.name.toLowerCase().includes(searchTerm) || 
-         entry.definition.toLowerCase().includes(searchTerm);
-};
-
 const columns: ColumnDef<LexiconEntry>[] = [
   {
     accessorKey: "name",
-    filterFn: customFilter,
     sortingFn: (rowA, rowB) => {
       const searchTerm = (rowA.getValue("name") as string)?.toLowerCase() || "";
       const nameA = rowA.original.name.toLowerCase();
@@ -108,7 +98,6 @@ export function LexiconDataTable({ data, initialSlug }: DataTableProps) {
       columns={columns}
       searchPlaceholder="Search Lexicon..."
       searchColumnId="name"
-      customFilter={customFilter}
       viewMode={isViewingSingleTerm ? {
         isActive: true,
         onViewAll: handleClearSlugFilter,

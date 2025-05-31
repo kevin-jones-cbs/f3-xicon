@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ const ALL_TAGS = [
   'Warmup'
 ] as const;
 
-export default function SubmitExiconPage() {
+function SubmitExiconForm() {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -399,5 +399,19 @@ export default function SubmitExiconPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function SubmitExiconPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto p-4 max-w-2xl">
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-4">Loading...</div>
+        </div>
+      </div>
+    }>
+      <SubmitExiconForm />
+    </Suspense>
   );
 } 

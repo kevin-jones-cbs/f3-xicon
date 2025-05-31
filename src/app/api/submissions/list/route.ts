@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import pool from '@/lib/db';
+import { authOptions } from '@/lib/auth';
+import { getDbPool } from '@/lib/db';
 
 export async function GET() {
   try {
@@ -13,7 +13,7 @@ export async function GET() {
 
     // Get submissions from both tables
     const [exiconResult, lexiconResult] = await Promise.all([
-      pool.query(`
+      getDbPool().query(`
         SELECT 
           id,
           name,
@@ -24,7 +24,7 @@ export async function GET() {
         FROM xicon.exicon_submissions
         ORDER BY submitted_on DESC
       `),
-      pool.query(`
+      getDbPool().query(`
         SELECT 
           id,
           name,
