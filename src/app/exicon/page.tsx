@@ -51,6 +51,11 @@ function ExiconContent() {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
+  const resetPagination = () => {
+    setCurrentPage(1);
+    setPageInput('1');
+  };
+
   const getEmbedUrl = (url: string) => {
     try {
       const urlObj = new URL(url);
@@ -73,8 +78,7 @@ function ExiconContent() {
 
   // Reset page number when search term changes
   useEffect(() => {
-    setCurrentPage(1);
-    setPageInput('1');
+    resetPagination();
   }, [searchTerm]);
 
   useEffect(() => {
@@ -164,8 +168,7 @@ function ExiconContent() {
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
     );
-    setCurrentPage(1);
-    setPageInput('1');
+    resetPagination();
   };
 
   const handleDelete = async (slug: string) => {
@@ -278,7 +281,10 @@ function ExiconContent() {
                     </span>
                   ))}
                   <button
-                    onClick={() => setSelectedTags([])}
+                    onClick={() => {
+                      setSelectedTags([]);
+                      resetPagination();
+                    }}
                     className="ml-2 px-2 py-0.5 text-xs rounded-full font-medium transition-colors bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
                   >
                     Clear tags
