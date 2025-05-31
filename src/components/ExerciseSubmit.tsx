@@ -66,6 +66,15 @@ function ExerciseSubmitContent({
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmission, setIsSubmission] = useState(false);
 
+  const handleNavigation = () => {
+    if (isSubmission) {
+      router.push('/admin/submissions');
+    } else {
+      const type = apiPath.includes('lexicon') ? 'lexicon' : 'exicon';
+      router.push(`/${type}`);
+    }
+  };
+
   useEffect(() => {
     if (editSlug || submissionId) {
       const fetchData = async () => {
@@ -133,7 +142,8 @@ function ExerciseSubmitContent({
         window.dispatchEvent(new Event('submission-updated'));
       }
 
-      router.push('/admin/submissions');
+      // Route based on context
+      handleNavigation();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -158,7 +168,7 @@ function ExerciseSubmitContent({
 
       // Dispatch event to update submission counts
       window.dispatchEvent(new Event('submission-updated'));
-      router.push('/admin/submissions');
+      handleNavigation();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -390,7 +400,7 @@ function ExerciseSubmitContent({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push('/admin/submissions')}
+                onClick={handleNavigation}
               >
                 Cancel
               </Button>
