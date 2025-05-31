@@ -26,7 +26,9 @@ export default function SubmitExiconPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editSlug = searchParams.get('edit');
+  const submissionId = searchParams.get('submission');
   const [isEditing, setIsEditing] = useState(false);
+  const [isSubmission, setIsSubmission] = useState(false);
   const [name, setName] = useState('');
   const [definition, setDefinition] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
@@ -40,14 +42,12 @@ export default function SubmitExiconPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const loadExercise = async () => {
-      if (editSlug) {
-        setIsLoading(true);
-        try {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        if (editSlug) {
           const response = await fetch(`/api/exicon/${editSlug}`);
-          if (!response.ok) {
-            throw new Error('Failed to load exercise');
-          }
+          if (!response.ok) throw new Error('Failed to fetch exercise');
           const data = await response.json();
           setName(data.name);
           setDefinition(data.definition);
@@ -55,16 +55,30 @@ export default function SubmitExiconPage() {
           setSelectedTags(data.tags ? data.tags.split('|') : []);
           setAliases(data.aliases ? data.aliases.split('|') : []);
           setIsEditing(true);
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to load exercise');
-        } finally {
-          setIsLoading(false);
+        } else if (submissionId) {
+          const response = await fetch(`/api/submissions/${submissionId}`);
+          if (!response.ok) throw new Error('Failed to fetch submission');
+          const data = await response.json();
+          setName(data.name);
+          setDefinition(data.definition);
+          setVideoUrl(data.video_url || '');
+          setSelectedTags(data.tags ? data.tags.split('|') : []);
+          setAliases(data.aliases ? data.aliases.split('|') : []);
+          setF3name(data.f3name || '');
+          setRegion(data.region || '');
+          setIsSubmission(true);
         }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    loadExercise();
-  }, [editSlug]);
+    if (editSlug || submissionId) {
+      fetchData();
+    }
+  }, [editSlug, submissionId]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev => 
@@ -127,6 +141,40 @@ export default function SubmitExiconPage() {
         throw new Error(data.error || `Failed to ${isEditing ? 'update' : session ? 'create' : 'submit'} entry`);
       }
 
+      // If this was a submission being approved, delete the submission
+      if (isSubmission) {
+        await fetch(`/api/submissions/${submissionId}`, {
+          method: 'DELETE',
+        });
+        // Dispatch event to update submission counts
+        window.dispatchEvent(new Event('submission-updated'));
+      }
+
+      router.push('/exicon');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!isSubmission || !submissionId) return;
+    
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/submissions/${submissionId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reject submission');
+      }
+
+      // Dispatch event to update submission counts
+      window.dispatchEvent(new Event('submission-updated'));
       router.push('/exicon');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -148,13 +196,17 @@ export default function SubmitExiconPage() {
   return (
     <div className="container mx-auto p-4 max-w-2xl">
       <h1 className="text-3xl font-bold mb-6">
-        {isEditing ? 'Edit Exercise' : session ? 'Create New Exicon Entry' : 'Submit a New Exercise'}
+        {isEditing ? 'Edit Exercise' : isSubmission ? 'Approve Submission' : session ? 'Create New Exicon Entry' : 'Submit a New Exercise'}
       </h1>
       
       {session && !isEditing && (
         <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
           <p className="font-medium">Admin Mode</p>
-          <p className="text-sm mt-1">You are creating a new exercise entry directly in the exicon. This will be published immediately without going through the submission process.</p>
+          <p className="text-sm mt-1">
+            {isSubmission 
+              ? 'You are approving a submitted exercise. This will create a new entry in the exicon and remove it from submissions.'
+              : 'You are creating a new exercise entry directly in the exicon. This will be published immediately without going through the submission process.'}
+          </p>
         </div>
       )}
       
@@ -325,8 +377,18 @@ export default function SubmitExiconPage() {
             disabled={isSubmitting}
             className="flex-1"
           >
-            {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : session ? 'Create Exercise' : 'Submit Exercise'}
+            {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : isSubmission ? 'Approve Submission' : session ? 'Create Exercise' : 'Submit Exercise'}
           </Button>
+          {isSubmission && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleReject}
+              disabled={isSubmitting}
+            >
+              Reject Submission
+            </Button>
+          )}
           <Button
             type="button"
             variant="outline"

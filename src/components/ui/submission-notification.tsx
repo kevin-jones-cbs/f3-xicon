@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
+import Link from 'next/link';
 
 interface SubmissionCounts {
   exiconCount: number;
@@ -32,7 +33,17 @@ export default function SubmissionNotification() {
     fetchCounts();
     // Refresh counts every 5 minutes
     const interval = setInterval(fetchCounts, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+
+    // Listen for submission updates
+    const handleSubmissionUpdate = () => {
+      fetchCounts();
+    };
+    window.addEventListener('submission-updated', handleSubmissionUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('submission-updated', handleSubmissionUpdate);
+    };
   }, []);
 
   if (isLoading || !counts || counts.totalCount === 0) {
@@ -56,7 +67,13 @@ export default function SubmissionNotification() {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg py-1 z-50">
           <div className="px-4 py-2 text-sm text-gray-700">
-            <div className="font-medium mb-2">Pending Submissions</div>
+            <Link 
+              href="/admin/submissions" 
+              className="font-medium mb-2 block text-blue-600 hover:text-blue-800 underline"
+              onClick={() => setIsOpen(false)}
+            >
+              Pending Submissions
+            </Link>
             <div className="space-y-1">
               <div className="flex justify-between">
                 <span>Exicon:</span>

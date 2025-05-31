@@ -30,7 +30,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push('/'); // Redirect to home page after successful login
+      router.push('/admin/submissions'); // Redirect submissions on login
       router.refresh();
     } catch (error) {
       setError('An error occurred. Please try again.');
