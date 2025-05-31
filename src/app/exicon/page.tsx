@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import ExerciseList from '@/components/ExerciseList';
 import { ExerciseEntry } from '@/types/excercise-entry';
+import { useStarredExercises } from '@/utils/starredExercises';
 
 const ALL_TAGS = [
   'Arms',
@@ -16,7 +17,8 @@ const ALL_TAGS = [
   'Run',
   'Routine',
   'Warmup',
-  'Video'
+  'Video',
+  '⭐ Starred'
 ] as const;
 
 export default function ExiconPage() {
@@ -35,6 +37,7 @@ function ExiconContent() {
   const [data, setData] = useState<ExerciseEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { starredExercises } = useStarredExercises();
 
   useEffect(() => {
     const fetchData = async () => {

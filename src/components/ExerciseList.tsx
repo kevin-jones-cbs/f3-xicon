@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Search, ChevronDown, ChevronUp, X, Play, Pencil, Trash2 } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, X, Play, Pencil, Trash2, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { exportToCSV } from '@/utils/csvExport';
 import { ExerciseEntry } from '@/types/excercise-entry';
+import { useStarredExercises } from '@/utils/starredExercises';
 
 interface ExerciseListProps {
   data: ExerciseEntry[];
@@ -34,8 +35,10 @@ export default function ExerciseList({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState('');
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const { toggleStar, isStarred, starredExercises } = useStarredExercises();
   const itemsPerPage = 5;
   const router = useRouter();
+  const isExicon = title.toLowerCase().includes('exicon');
 
   const resetPagination = () => {
     setCurrentPage(1);
@@ -84,12 +87,18 @@ export default function ExerciseList({
             if (tag === 'Video') {
               return hasVideo;
             }
+            if (tag === '⭐ Starred') {
+              return starredExercises.includes(exercise.slug);
+            }
             return exerciseTags.includes(tag);
           });
         } else {
           return selectedTags.some(tag => {
             if (tag === 'Video') {
               return hasVideo;
+            }
+            if (tag === '⭐ Starred') {
+              return starredExercises.includes(exercise.slug);
             }
             return exerciseTags.includes(tag);
           });
@@ -98,7 +107,7 @@ export default function ExerciseList({
     }
 
     return filtered;
-  }, [data, searchTerm, selectedTags, tagOperator, showTags]);
+  }, [data, searchTerm, selectedTags, tagOperator, showTags, starredExercises]);
 
   const paginatedExercises = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -111,8 +120,14 @@ export default function ExerciseList({
     setExpandedCard(expandedCard === slug ? null : slug);
   };
 
+  const clearSearchTerm = () => {
+    setSearchTerm('');
+  }
+
   const clearSearch = () => {
     setSearchTerm('');
+    setSelectedTags([]);
+    resetPagination();
   };
 
   const toggleTag = (tag: string) => {
@@ -163,7 +178,7 @@ export default function ExerciseList({
             />
             {searchTerm && (
               <button
-                onClick={clearSearch}
+                onClick={(clearSearchTerm)}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -171,7 +186,7 @@ export default function ExerciseList({
             )}
           </div>
           {showTags && (
-            <div className="flex flex-wrap gap-2 mt-4">
+            <div className="flex flex-wrap justify-center gap-2 mt-4">
               {allTags.map((tag) => (
                 <button
                   key={tag}
@@ -180,10 +195,14 @@ export default function ExerciseList({
                     selectedTags.includes(tag)
                       ? tag === 'Video'
                         ? 'bg-red-100 text-red-700'
-                        : 'bg-blue-100 text-blue-700'
+                        : tag === '⭐ Starred'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-blue-100 text-blue-700'
                       : tag === 'Video'
                         ? 'border border-red-200 text-red-600 hover:bg-red-50'
-                        : 'border border-blue-200 text-blue-600 hover:bg-blue-50'
+                        : tag === '⭐ Starred'
+                          ? 'border border-yellow-200 text-yellow-600 hover:bg-yellow-50'
+                          : 'border border-blue-200 text-blue-600 hover:bg-blue-50'
                   }`}
                 >
                   {tag}
@@ -193,7 +212,7 @@ export default function ExerciseList({
           )}
           <div className="text-sm text-slate-500 mt-6 flex items-center gap-2">
             <span>
-              {filteredExercises.length} entry{filteredExercises.length !== 1 ? 's' : ''} found
+              {filteredExercises.length} entr{filteredExercises.length !== 1 ? 'ies' : 'y'} found
               {showTags && selectedTags.length > 0 && (
                 <>
                   {' tagged '}
@@ -250,6 +269,17 @@ export default function ExerciseList({
                         <h3 className="text-xl font-semibold text-slate-800">
                           {exercise.name}
                         </h3>
+                        {isExicon && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleStar(exercise.slug);
+                            }}
+                            className="cursor-pointer inline-flex items-center text-yellow-400 hover:text-yellow-500 transition-colors"
+                          >
+                            <Star className={`w-5 h-5 ${isStarred(exercise.slug) ? 'fill-current' : ''}`} />
+                          </button>
+                        )}
                         {session && (
                           <div className="flex items-center gap-2">
                             <button
@@ -418,18 +448,33 @@ export default function ExerciseList({
         {filteredExercises.length === 0 && (
           <div className="text-center py-12">
             <div className="text-slate-400 mb-4">
-              <Search className="w-16 h-16 mx-auto" />
+              {selectedTags.includes('⭐ Starred') ? (
+                <Star className="w-16 h-16 mx-auto" />
+              ) : (
+                <Search className="w-16 h-16 mx-auto" />
+              )}
             </div>
-            <h3 className="text-xl font-semibold text-slate-600 mb-2">No entries found</h3>
-            <p className="text-slate-500">
-              Try adjusting your search terms or{' '}
-              <button
-                onClick={clearSearch}
-                className="text-blue-600 hover:text-blue-700 underline cursor-pointer"
-              >
-                clear the search
-              </button>
-            </p>
+            {selectedTags.includes('⭐ Starred') ? (
+              <>
+                <h3 className="text-xl font-semibold text-slate-600 mb-2">No starred exercises found</h3>
+                <p className="text-slate-500">
+                  Star your favorite exercises to plan out your next Q!
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-semibold text-slate-600 mb-2">No entries found</h3>
+                <p className="text-slate-500">
+                  Try adjusting your search terms or{' '}
+                  <button
+                    onClick={clearSearch}
+                    className="text-blue-600 hover:text-blue-700 underline cursor-pointer"
+                  >
+                    clear the search
+                  </button>
+                </p>
+              </>
+            )}
           </div>
         )}
 
