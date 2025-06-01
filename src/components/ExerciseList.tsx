@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, ChevronDown, ChevronUp, X, Play, Pencil, Trash2, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -39,11 +39,25 @@ export default function ExerciseList({
   const [linkedExercise, setLinkedExercise] = useState<ExerciseEntry | null>(null);
   const { toggleStar, isStarred, starredExercises } = useStarredExercises();
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
   const isExicon = title.toLowerCase().includes('exicon');
 
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (itemsPerPage > 5) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const resetPagination = () => {
@@ -295,7 +309,7 @@ export default function ExerciseList({
             >
               {/* Card Header */}
               <div
-                className={`p-5 cursor-pointer hover:bg-slate-50 transition-colors ${
+                className={`p-3 sm:p-5 cursor-pointer hover:bg-slate-50 transition-colors ${
                   expandedCards.includes(exercise.slug) ? '' : 'h-full'
                 }`}
                 onClick={() => toggleExpanded(exercise.slug)}
@@ -303,7 +317,7 @@ export default function ExerciseList({
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2 min-h-[2.5rem]">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-wrap">
                         <h3 className="text-xl font-semibold text-slate-800">
                           {exercise.name}
                         </h3>
@@ -370,7 +384,7 @@ export default function ExerciseList({
                     </p>
                   </div>
                   <div className="ml-4 flex-shrink-0">
-                    {((showVideos && exercise.video_url) || exercise.aliases || exercise.definition.length > 200) && (
+                    {((showVideos && exercise.video_url) || exercise.aliases || (isMobile ? exercise.definition.length > 100 : exercise.definition.length > 200)) && (
                       <div>
                         {expandedCards.includes(exercise.slug) ? (
                           <ChevronUp className="w-6 h-6 text-slate-400" />
