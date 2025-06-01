@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { exportToCSV } from '@/utils/csvExport';
 import { ExerciseEntry } from '@/types/excercise-entry';
 import { useStarredExercises } from '@/utils/starredExercises';
+import { ExerciseLinkModal } from '@/components/ui/exercise-link-modal';
 
 interface ExerciseListProps {
   data: ExerciseEntry[];
@@ -35,6 +36,7 @@ export default function ExerciseList({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState('');
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [linkedExercise, setLinkedExercise] = useState<ExerciseEntry | null>(null);
   const { toggleStar, isStarred, starredExercises } = useStarredExercises();
   const itemsPerPage = 5;
   const router = useRouter();
@@ -122,6 +124,7 @@ export default function ExerciseList({
 
   const clearSearchTerm = () => {
     setSearchTerm('');
+    resetPagination();
   }
 
   const clearSearch = () => {
@@ -154,6 +157,32 @@ export default function ExerciseList({
     } finally {
       setIsDeleting(null);
     }
+  };
+
+  const parseDefinition = (definition: string) => {
+    const parts = definition.split(/(@\([^)]+\))/g);
+    return parts.map((part, index) => {
+      const match = part.match(/^@\(([^)]+)\)$/);
+      if (match) {
+        const exerciseName = match[1];
+        const linkedExercise = data.find(e => e.name === exerciseName);
+        if (linkedExercise) {
+          return (
+            <button
+              key={index}
+              onClick={(e) => {
+                e.stopPropagation();
+                setLinkedExercise(linkedExercise);
+              }}
+              className="text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+            >
+              {exerciseName}
+            </button>
+          );
+        }
+      }
+      return part;
+    });
   };
 
   return (
@@ -328,7 +357,7 @@ export default function ExerciseList({
                       )}
                     </div>
                     <p className={`text-slate-600 leading-relaxed whitespace-pre-wrap ${expandedCard === exercise.slug ? '' : 'line-clamp-2'}`}>
-                      {exercise.definition}
+                      {parseDefinition(exercise.definition)}
                     </p>
                   </div>
                   <div className="ml-4 flex-shrink-0">
@@ -504,6 +533,13 @@ export default function ExerciseList({
           </div>
         </div>
       </div>
+
+      {/* Exercise Link Modal */}
+      <ExerciseLinkModal
+        exercise={linkedExercise}
+        onClose={() => setLinkedExercise(null)}
+        allExercises={data}
+      />
     </div>
   );
 } 
