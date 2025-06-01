@@ -38,13 +38,18 @@ export default function ExerciseList({
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [linkedExercise, setLinkedExercise] = useState<ExerciseEntry | null>(null);
   const { toggleStar, isStarred, starredExercises } = useStarredExercises();
-  const itemsPerPage = 5;
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const router = useRouter();
   const isExicon = title.toLowerCase().includes('exicon');
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const resetPagination = () => {
     setCurrentPage(1);
     setPageInput('1');
+    scrollToTop();
   };
 
   const getEmbedUrl = (url: string) => {
@@ -114,7 +119,7 @@ export default function ExerciseList({
   const paginatedExercises = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredExercises.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredExercises, currentPage]);
+  }, [filteredExercises, currentPage, itemsPerPage]);
 
   const totalPages = Math.ceil(filteredExercises.length / itemsPerPage);
 
@@ -417,6 +422,7 @@ export default function ExerciseList({
                   const newPage = Math.max(1, currentPage - 1);
                   setCurrentPage(newPage);
                   setPageInput(newPage.toString());
+                  scrollToTop();
                 }}
                 disabled={currentPage === 1}
                 className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 disabled:opacity-50 text-sm cursor-pointer"
@@ -438,6 +444,7 @@ export default function ExerciseList({
                   const page = parseInt(pageInput);
                   if (page >= 1 && page <= totalPages) {
                     setCurrentPage(page);
+                    scrollToTop();
                   } else {
                     setPageInput(currentPage.toString());
                   }
@@ -447,6 +454,7 @@ export default function ExerciseList({
                     const page = parseInt(pageInput);
                     if (page >= 1 && page <= totalPages) {
                       setCurrentPage(page);
+                      scrollToTop();
                     } else {
                       setPageInput(currentPage.toString());
                     }
@@ -463,12 +471,33 @@ export default function ExerciseList({
                   const newPage = Math.min(totalPages, currentPage + 1);
                   setCurrentPage(newPage);
                   setPageInput(newPage.toString());
+                  scrollToTop();
                 }}
                 disabled={currentPage === totalPages}
                 className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 disabled:opacity-50 text-sm cursor-pointer"
               >
                 Next
               </button>
+            </div>
+            <div className="flex items-center gap-2 ml-4">
+              <span className="text-sm">Show</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  const newSize = parseInt(e.target.value);
+                  setItemsPerPage(newSize);
+                  setCurrentPage(1);
+                  setPageInput('1');
+                  scrollToTop();
+                }}
+                className="px-2 py-1 text-sm rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+              <span className="text-sm">per page</span>
             </div>
           </div>
         )}
