@@ -47,6 +47,15 @@ Both the Exicon and Lexicon are integrated into a unified UI and codebase with s
 
 ---
 
+## Plans if Selected
+
+- Create the Lexicon/Exicon tables and submission tables in the F3 Postgres database
+- Integrate with the existing next-auth that the maps team uses
+- Deploy Next app to GCP, route `/exicon`, `/lexicon` to this application.
+- Continue to iterate alongside the F3 community!
+
+---
+
 ## Tech Stack
 
 * **Next.js** 
@@ -54,8 +63,6 @@ Both the Exicon and Lexicon are integrated into a unified UI and codebase with s
 * **NextAuth** for authentication
 * **Tailwind CSS** for styling
 * **Deployed to Google Cloud Run**
-
----
 
 ---
 
