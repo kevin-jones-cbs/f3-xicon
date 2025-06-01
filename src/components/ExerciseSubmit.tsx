@@ -526,7 +526,7 @@ function ExerciseSubmitContent({
                       </>
                     ) : (
                       <div className="px-4 py-3 text-sm text-slate-500">
-                        No exercises found for "{searchTerm}"
+                        No exercises found for {searchTerm}
                       </div>
                     )}
                   </div>
