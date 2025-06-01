@@ -32,7 +32,7 @@ export default function ExerciseList({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagOperator, setTagOperator] = useState<'AND' | 'OR'>('AND');
-  const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [expandedCards, setExpandedCards] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState('');
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -124,7 +124,11 @@ export default function ExerciseList({
   const totalPages = Math.ceil(filteredExercises.length / itemsPerPage);
 
   const toggleExpanded = (slug: string) => {
-    setExpandedCard(expandedCard === slug ? null : slug);
+    setExpandedCards(prev => 
+      prev.includes(slug) 
+        ? prev.filter(s => s !== slug)
+        : [...prev, slug]
+    );
   };
 
   const clearSearchTerm = () => {
@@ -286,13 +290,13 @@ export default function ExerciseList({
             <div
               key={exercise.slug}
               className={`bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-lg ${
-                expandedCard === exercise.slug ? '' : 'h-[140px]'
+                expandedCards.includes(exercise.slug) ? '' : 'h-[140px]'
               }`}
             >
               {/* Card Header */}
               <div
                 className={`p-5 cursor-pointer hover:bg-slate-50 transition-colors ${
-                  expandedCard === exercise.slug ? '' : 'h-full'
+                  expandedCards.includes(exercise.slug) ? '' : 'h-full'
                 }`}
                 onClick={() => toggleExpanded(exercise.slug)}
               >
@@ -361,14 +365,14 @@ export default function ExerciseList({
                         </div>
                       )}
                     </div>
-                    <p className={`text-slate-600 leading-relaxed whitespace-pre-wrap ${expandedCard === exercise.slug ? '' : 'line-clamp-2'}`}>
+                    <p className={`text-slate-600 leading-relaxed whitespace-pre-wrap ${expandedCards.includes(exercise.slug) ? '' : 'line-clamp-2'}`}>
                       {parseDefinition(exercise.definition)}
                     </p>
                   </div>
                   <div className="ml-4 flex-shrink-0">
                     {((showVideos && exercise.video_url) || exercise.aliases || exercise.definition.length > 200) && (
                       <div>
-                        {expandedCard === exercise.slug ? (
+                        {expandedCards.includes(exercise.slug) ? (
                           <ChevronUp className="w-6 h-6 text-slate-400" />
                         ) : (
                           <ChevronDown className="w-6 h-6 text-slate-400" />
@@ -380,7 +384,7 @@ export default function ExerciseList({
               </div>
 
               {/* Expanded Content */}
-              {expandedCard === exercise.slug && ((showVideos && exercise.video_url) || exercise.aliases) && (
+              {expandedCards.includes(exercise.slug) && ((showVideos && exercise.video_url) || exercise.aliases) && (
                 <div className="border-t border-slate-100 bg-slate-50">
                   <div className="p-6">
                     {showVideos && exercise.video_url && (
