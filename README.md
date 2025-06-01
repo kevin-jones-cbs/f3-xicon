@@ -36,6 +36,7 @@ Both the Exicon and Lexicon are integrated into a unified UI and codebase with s
 * **Inline editing of entries before approval** including a searchable exercise database for tagging related exicon entries
 * **Support for submitting F3 Name and Region** during submission, visible to admins
 * **Starring/favoriting workouts**, persistently stored, as a way to plan future Qs
+* **Data Cleanup** - Cleaned up the incorrect encodings, attached YouTube videos from the Vexicon
 
 ---
 
