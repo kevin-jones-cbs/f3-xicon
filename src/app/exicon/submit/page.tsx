@@ -25,6 +25,7 @@ export default function ExiconSubmitPage() {
       showVideos={true}
       allTags={ALL_TAGS}
       apiPath="/api/exicon"
+      isExicon={true}
     />
   );
 } 

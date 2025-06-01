@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { ExerciseEntry } from '@/types/excercise-entry';
@@ -13,6 +13,7 @@ interface ExerciseSubmitProps {
   showVideos?: boolean;
   allTags?: readonly string[];
   apiPath: string;
+  isExicon?: boolean;
 }
 
 export default function ExerciseSubmit({
@@ -22,6 +23,7 @@ export default function ExerciseSubmit({
   showVideos = true,
   allTags = [],
   apiPath,
+  isExicon = false,
 }: ExerciseSubmitProps) {
   return (
     <Suspense fallback={<div>Loading...</div>}>
@@ -32,6 +34,7 @@ export default function ExerciseSubmit({
         showVideos={showVideos}
         allTags={allTags}
         apiPath={apiPath}
+        isExicon={isExicon}
       />
     </Suspense>
   );
@@ -44,6 +47,7 @@ function ExerciseSubmitContent({
   showVideos = true,
   allTags = [],
   apiPath,
+  isExicon = false,
 }: ExerciseSubmitProps) {
   const { data: session } = useSession();
   const router = useRouter();
@@ -65,6 +69,36 @@ function ExerciseSubmitContent({
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmission, setIsSubmission] = useState(false);
+  const [allExercises, setAllExercises] = useState<ExerciseEntry[]>([]);
+  
+  // Improved autocomplete state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<ExerciseEntry[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [atSymbolPosition, setAtSymbolPosition] = useState(-1);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Only fetch exercises for search if this is an exicon entry
+  useEffect(() => {
+    if (isExicon) {
+      const fetchExercises = async () => {
+        try {
+          const response = await fetch('/api/exicon');
+          if (!response.ok) {
+            throw new Error('Failed to fetch exercises');
+          }
+          const data = await response.json();
+          setAllExercises(data);
+        } catch (err) {
+          console.error('Failed to fetch exercises:', err);
+        }
+      };
+      fetchExercises();
+    }
+  }, [isExicon]);
 
   const handleNavigation = () => {
     if (isSubmission) {
@@ -107,6 +141,203 @@ function ExerciseSubmitContent({
     }
   }, [editSlug, submissionId, apiPath]);
 
+  // Improved position calculation for dropdown
+  const getDropdownPosition = () => {
+    if (!textareaRef.current || !containerRef.current) return { top: 0, left: 0 };
+
+    const textarea = textareaRef.current;
+    const container = containerRef.current;
+    const { selectionStart } = textarea;
+    
+    // Get textarea positioning
+    const textareaRect = textarea.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    
+    // Create a temporary element to measure text position
+    const mirror = document.createElement('div');
+    const computed = window.getComputedStyle(textarea);
+    
+    // Copy critical styles
+    [
+      'font-family', 'font-size', 'font-weight', 'line-height',
+      'letter-spacing', 'word-spacing', 'padding-left', 'padding-top',
+      'padding-right', 'padding-bottom', 'border-left-width', 
+      'border-top-width', 'border-right-width', 'border-bottom-width',
+      'white-space', 'word-wrap', 'width', 'box-sizing'
+    ].forEach(prop => {
+      mirror.style.setProperty(prop, computed.getPropertyValue(prop));
+    });
+
+    mirror.style.position = 'absolute';
+    mirror.style.visibility = 'hidden';
+    mirror.style.height = 'auto';
+    mirror.style.whiteSpace = 'pre-wrap';
+    mirror.style.wordWrap = 'break-word';
+    mirror.style.overflow = 'hidden';
+    
+    document.body.appendChild(mirror);
+    
+    // Add text up to cursor position
+    const textBeforeSelection = textarea.value.substring(0, selectionStart);
+    mirror.textContent = textBeforeSelection;
+    
+    // Add a span to measure exact cursor position
+    const span = document.createElement('span');
+    span.textContent = '|';
+    mirror.appendChild(span);
+    
+    const spanRect = span.getBoundingClientRect();
+    const mirrorRect = mirror.getBoundingClientRect();
+    
+    document.body.removeChild(mirror);
+    
+    // Calculate position relative to the container
+    const relativeTop = (spanRect.top - mirrorRect.top) - textarea.scrollTop + 30;
+    const relativeLeft = spanRect.left - mirrorRect.left;
+    
+    // Position relative to container, accounting for textarea position
+    const top = textareaRect.top - containerRect.top + relativeTop;
+    const left = textareaRect.left - containerRect.left + relativeLeft;
+    
+    return { top, left };
+  };
+
+  const handleDefinitionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const { value, selectionStart } = e.target;
+    setFormData(prev => ({ ...prev, definition: value }));
+
+    if (!isExicon) return;
+
+    // Find the last @ symbol before the cursor
+    const textBeforeCursor = value.substring(0, selectionStart);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtIndex !== -1) {
+      // Check if there's a closing parenthesis after the @ but before cursor
+      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
+      const hasClosingParen = textAfterAt.includes(')');
+      
+      if (!hasClosingParen) {
+        // We're in an active @ mention
+        const searchQuery = textAfterAt.trim();
+        setSearchTerm(searchQuery);
+        setAtSymbolPosition(lastAtIndex);
+        
+        if (searchQuery.length >= 0) {
+          const results = allExercises
+            .filter(exercise =>
+              exercise.name.toLowerCase().startsWith(searchQuery.toLowerCase())
+            )
+            .slice(0, 8);
+          
+          setSearchResults(results);
+          setShowSearchResults(results.length > 0);
+          setSelectedIndex(0);
+        } else {
+          setSearchResults(allExercises.slice(0, 8));
+          setShowSearchResults(true);
+          setSelectedIndex(0);
+        }
+      } else {
+        setShowSearchResults(false);
+      }
+    } else {
+      setShowSearchResults(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!showSearchResults) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev => {
+          const newIndex = prev < searchResults.length - 1 ? prev + 1 : prev;
+          setTimeout(() => {
+            const dropdown = dropdownRef.current;
+            const selectedItem = dropdown?.querySelector(`[data-index="${newIndex}"]`);
+            if (selectedItem) {
+              selectedItem.scrollIntoView({ block: 'nearest' });
+            }
+          }, 0);
+          return newIndex;
+        });
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev => {
+          const newIndex = prev > 0 ? prev - 1 : prev;
+          setTimeout(() => {
+            const dropdown = dropdownRef.current;
+            const selectedItem = dropdown?.querySelector(`[data-index="${newIndex}"]`);
+            if (selectedItem) {
+              selectedItem.scrollIntoView({ block: 'nearest' });
+            }
+          }, 0);
+          return newIndex;
+        });
+        break;
+      case 'Enter':
+      case 'Tab':
+        e.preventDefault();
+        if (searchResults[selectedIndex]) {
+          handleExerciseSelect(searchResults[selectedIndex]);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setShowSearchResults(false);
+        break;
+    }
+  };
+
+  const handleExerciseSelect = (exercise: ExerciseEntry) => {
+    if (atSymbolPosition === -1) return;
+
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const { value, selectionStart } = textarea;
+    
+    // Find the end of the current @ mention
+    let endPosition = selectionStart;
+    while (endPosition < value.length && 
+           value[endPosition] !== ' ' && 
+           value[endPosition] !== '\n' && 
+           value[endPosition] !== ')') {
+      endPosition++;
+    }
+
+    // Replace the text from @ symbol to current cursor position
+    const beforeAt = value.substring(0, atSymbolPosition);
+    const afterMention = value.substring(endPosition);
+    const newValue = `${beforeAt}@(${exercise.name})${afterMention}`;
+    
+    setFormData(prev => ({ ...prev, definition: newValue }));
+    setShowSearchResults(false);
+    
+    // Set cursor position after the inserted text
+    const newCursorPosition = atSymbolPosition + `@(${exercise.name})`.length;
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPosition, newCursorPosition);
+    }, 0);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+          textareaRef.current && !textareaRef.current.contains(event.target as Node)) {
+        setShowSearchResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -138,11 +369,9 @@ function ExerciseSubmitContent({
         await fetch(`/api/${submissionType}/submissions/${submissionId}`, {
           method: 'DELETE',
         });
-        // Dispatch event to update submission counts
         window.dispatchEvent(new Event('submission-updated'));
       }
 
-      // Route based on context
       handleNavigation();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -166,7 +395,6 @@ function ExerciseSubmitContent({
         throw new Error('Failed to reject submission');
       }
 
-      // Dispatch event to update submission counts
       window.dispatchEvent(new Event('submission-updated'));
       handleNavigation();
     } catch (err) {
@@ -204,6 +432,8 @@ function ExerciseSubmitContent({
     setFormData(prev => ({ ...prev, aliases: newAliases.join('|') }));
   };
 
+  const dropdownPosition = showSearchResults ? getDropdownPosition() : { top: 0, left: 0 };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
       <div className="max-w-2xl mx-auto">
@@ -240,20 +470,73 @@ function ExerciseSubmitContent({
               />
             </div>
 
-            <div>
+            <div className="relative" ref={containerRef}>
               <label htmlFor="definition" className="block text-sm font-medium text-slate-700 mb-1">
                 Definition *
               </label>
-              <textarea
-                id="definition"
-                name="definition"
-                required
-                value={formData.definition}
-                onChange={handleChange}
-                rows={4}
-                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-blue-500 focus:outline-none"
-                placeholder="Enter the definition"
-              />
+              <div className="relative">
+                <textarea
+                  ref={textareaRef}
+                  id="definition"
+                  name="definition"
+                  required
+                  value={formData.definition}
+                  onChange={handleDefinitionChange}
+                  onKeyDown={isExicon ? handleKeyDown : undefined}
+                  rows={4}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-blue-500 focus:outline-none resize-vertical"
+                  placeholder={isExicon ? "Enter the definition (type @ to link to other exercises)" : "Enter the definition"}
+                />
+                
+                {isExicon && showSearchResults && (
+                  <div 
+                    ref={dropdownRef}
+                    className="absolute z-50 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto w-full max-w-sm sm:max-w-md"
+                    style={{
+                      top: `${dropdownPosition.top}px`,
+                      left: `${Math.max(0, Math.min(dropdownPosition.left, containerRef.current ? containerRef.current.offsetWidth - 320 : 0))}px`,
+                    }}
+                  >
+                    {searchResults.length > 0 ? (
+                      <>
+                        <div className="px-3 py-2 text-xs text-slate-500 border-b border-slate-100">
+                          Use ↑↓ to navigate, Enter to select, Esc to close
+                        </div>
+                        {searchResults.map((exercise, index) => (
+                          <button
+                            key={exercise.slug}
+                            type="button"
+                            data-index={index}
+                            onClick={() => handleExerciseSelect(exercise)}
+                            className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 transition-colors ${
+                              index === selectedIndex ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
+                            }`}
+                          >
+                            <div className="font-medium truncate">{exercise.name}</div>
+                            {exercise.definition && (
+                              <div className="text-xs text-slate-500 truncate mt-1">
+                                {exercise.definition.length > 50 
+                                  ? `${exercise.definition.substring(0, 50)}...`
+                                  : exercise.definition
+                                }
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </>
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-slate-500">
+                        No exercises found for "{searchTerm}"
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              {isExicon && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Type @ followed by an exercise name to create a link (e.g., @Burpee becomes @(Burpee))
+                </p>
+              )}
             </div>
 
             {showTags && (
@@ -426,4 +709,4 @@ function ExerciseSubmitContent({
       </div>
     </div>
   );
-} 
+}
