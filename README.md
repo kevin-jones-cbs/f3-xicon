@@ -8,6 +8,12 @@ Both the Exicon and Lexicon are integrated into a unified UI and codebase with s
 
 ---
 
+## Demo
+
+- [Exicon](https://next-app-116475879153.us-west1.run.app/exicon)
+- [Lxicon](https://next-app-116475879153.us-west1.run.app/lexicon)
+- [Admin Signin](https://next-app-116475879153.us-west1.run.app/login) (Password provided in submission)
+
 ## Key Features
 
 ### ✅ Core Requirements Implemented
@@ -22,20 +28,44 @@ Both the Exicon and Lexicon are integrated into a unified UI and codebase with s
 * **Admin interface** to view, approve, reject, and edit submissions
 * **Tag support and filtering** with AND/OR logic
 * **Embedded video support** (e.g., YouTube links)
-* **Reference links** between related entries (e.g., Crawl Bear references Bear Crawl)
+* **Reference links** between related entries (e.g., Abe Vigoda references Van Goghda). Inline modal shows definition of linked entry(s).
 
 ### ✨ Extra Features
 
 * **Notification banner for admins** showing count of pending submissions
 * **Inline editing of entries before approval** including a searchable exercise database for tagging related exicon entries
 * **Support for submitting F3 Name and Region** during submission, visible to admins
-* **Starring/favoriting workouts** as a way to plan future Qs
+* **Starring/favoriting workouts**, persistently stored, as a way to plan future Qs
 
 ---
 
 ## Screenshots
 
-*Coming soon*
+### Main Functionality
+
+<img width="450" alt="Image" src="https://github.com/user-attachments/assets/04e89ecf-0246-4bf0-ba95-d94a38ef7cbc" />
+
+<img width="450" alt="Image" src="https://github.com/user-attachments/assets/05aa3b7e-cca8-4778-a808-c6aecd498f73" />
+
+<img width="450" alt="Image" src="https://github.com/user-attachments/assets/db121cf6-1c5e-470b-8bd9-2f38abc60072" />
+
+<img width="450" alt="Image" src="https://github.com/user-attachments/assets/16533007-0f8c-4af5-858e-c153197df6dd" />
+
+### Submissions/Admin Mode
+
+<img width="450" alt="Image" src="https://github.com/user-attachments/assets/3de4a8ad-5177-4b1c-96eb-43863508d766" />
+
+<img width="450" alt="Image" src="https://github.com/user-attachments/assets/d6d31267-c7fa-467d-8009-c233942a37cc" />
+
+<img width="450" alt="Image" src="https://github.com/user-attachments/assets/ec9e806c-65c6-4466-a8c8-8652972b3a60" />
+
+<img width="450" alt="image" src="https://github.com/user-attachments/assets/4c937f29-7463-47d9-9bd2-914fc9df686a" />
+
+### Exercise Tagging
+
+<img width="450" alt="image" src="https://github.com/user-attachments/assets/638863f7-ab8d-4bfa-b8e2-418957382827" />
+
+<img width="450" alt="image" src="https://github.com/user-attachments/assets/678d786b-a005-4f35-8849-4b10606e3e7b" />
 
 ---
 
