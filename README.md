@@ -39,6 +39,25 @@ Both the Exicon and Lexicon are integrated into a unified UI and codebase with s
 
 ---
 
+## Future Improvements
+
+* Add **vector search** to search for "animal exercises" or "exercises based on movies"
+* Add **dynamic routing** for SEO 
+
+---
+
+## Tech Stack
+
+* **Next.js** 
+* **PostgreSQL** (deployed on GCP)
+* **NextAuth** for authentication
+* **Tailwind CSS** for styling
+* **Deployed to Google Cloud Run**
+
+---
+
+---
+
 ## Screenshots
 
 ### Main Functionality
@@ -66,29 +85,6 @@ Both the Exicon and Lexicon are integrated into a unified UI and codebase with s
 <img width="450" alt="image" src="https://github.com/user-attachments/assets/638863f7-ab8d-4bfa-b8e2-418957382827" />
 
 <img width="450" alt="image" src="https://github.com/user-attachments/assets/678d786b-a005-4f35-8849-4b10606e3e7b" />
-
----
-
-## Future Improvements
-
-* Add **vector search** to search for "animal exercises" or "exercises based on movies"
-* Add **dynamic routing** for SEO 
-
----
-
-## Tech Stack
-
-* **Next.js** 
-* **PostgreSQL** (deployed on GCP)
-* **NextAuth** for authentication
-* **Tailwind CSS** for styling
-* **Deployed to Google Cloud Run**
-
----
-
-## Setup & Deployment
-
-Instructions for setting up and deploying the application are included in the `/docs/setup.md` file. This project was built to run on GCP and can be quickly deployed using GitHub Actions or the `gcloud` CLI.
 
 ---
 
