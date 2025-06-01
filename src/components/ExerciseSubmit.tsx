@@ -5,6 +5,7 @@ import { ExerciseEntry } from '@/types/excercise-entry';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plus, X } from 'lucide-react';
+import SubmissionSuccess from './ui/submission-success';
 
 interface ExerciseSubmitProps {
   title: string;
@@ -70,6 +71,7 @@ function ExerciseSubmitContent({
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmission, setIsSubmission] = useState(false);
   const [allExercises, setAllExercises] = useState<ExerciseEntry[]>([]);
+  const [showSuccess, setShowSuccess] = useState(false);
   
   // Improved autocomplete state
   const [searchTerm, setSearchTerm] = useState('');
@@ -372,12 +374,23 @@ function ExerciseSubmitContent({
         window.dispatchEvent(new Event('submission-updated'));
       }
 
-      handleNavigation();
+      // Show success notification for public submissions
+      if (!session && !isEditing) {
+        setShowSuccess(true);
+      } else {
+        handleNavigation();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSuccessClose = () => {
+    setShowSuccess(false);
+    const type = apiPath.includes('lexicon') ? 'lexicon' : 'exicon';
+    router.push(`/${type}`);
   };
 
   const handleReject = async () => {
@@ -436,6 +449,7 @@ function ExerciseSubmitContent({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      {showSuccess && <SubmissionSuccess onClose={handleSuccessClose} />}
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-slate-800 mb-2">{title}</h1>
